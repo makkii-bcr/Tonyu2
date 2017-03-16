@@ -1,0 +1,23 @@
+[[api]]
+
+* $GamePad オブジェクト
+
+ゲームパッド（コントローラ）の判定を行うためのオブジェクトです。
+
+*メソッド
+
+-[[isConnected>$GamePad.isConnected]]
+-[[getButton>$GamePad.getButton]]
+-[[getButtonValue>$GamePad.getButtonValue]]
+-[[getButtonCount>$GamePad.getButtonCount]]
+-[[getUp>$GamePad.getUp]]
+-[[getDown>$GamePad.getDown]]
+-[[getLeft>$GamePad.getLeft]]
+-[[getRight>$GamePad.getRight]]
+-[[getAxis>$GamePad.getAxis]]
+-[[getAxisCount>$GamePad.getAxisCount]]
+-[[getPadId>$GamePad.getPadId]]
+-[[getMapping>$GamePad.getMapping]]
+-[[getPad>$GamePad.getPad]]
+-[[padsCount>$GamePad.padsCount]]
+-[[padsCount>$GamePad.setEnable]]
