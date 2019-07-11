@@ -41,7 +41,6 @@ var T2MediaLib = (function(){
                 this.context = new webkitAudioContext();
             } else {
                 this.context = null;
-                console.log('Your browser does not support yet Web Audio API');
             }
         } else {
             this.context = _context;
@@ -111,22 +110,29 @@ var T2MediaLib = (function(){
         var buffer2 = array2 != null ? audioBuffer.getChannelData(1) : null;
         var i;
         for (i = 0; i < array1.length ; i++) {
-             buffer1[i] = array1[i];
+            buffer1[i] = array1[i];
         }
         if (buffer2) {
             for (i = 0; i < array2.length ; i++) {
-                 buffer2[i] = array2[i];
+                buffer2[i] = array2[i];
             }
         }
         this.soundDataAry[idx].onDecodeComplete(audioBuffer);
     };
     // サウンドの読み込み・登録
     T2MediaLib.prototype.loadSound = function(idx, url, callbacks, isLoadAndDecode) { //@hoge1e3
-        if (!this.context || this.disabled) {
-            return null;
+        if (this.disabled) {
+            return;
         }
 
         this.soundDataAry[idx] = new T2MediaLib_SoundData(idx);
+
+        if (!this.context) { // Web Audio API 非サポート
+            this.soundDataAry[idx].onLoad(url);
+            this.soundDataAry[idx].onDecodeComplete(null);
+            this.loadAudio(idx, url, callbacks);
+            return;
+        }
 
         // midiがあったらpicoAudioを準備しておく
         if (url.match(/\.(midi?)$/) || url.match(/^data:audio\/mid/)) {
@@ -190,6 +196,9 @@ var T2MediaLib = (function(){
     };
     // サウンドのデコード
     T2MediaLib.prototype.decodeSound = function(idx, callbacks) {
+        if (!this.context || this.disabled) {
+            return;
+        }
         var soundData = this.soundDataAry[idx];
         if (soundData == null) return;
         if (soundData.fileData == null) return;
@@ -355,7 +364,7 @@ var T2MediaLib = (function(){
     // Chrome Autoplay Policy 対策
     T2MediaLib.prototype.activate = function () {
         this.init();
-        if (!this.context) return;
+        if (!this.context || this.disabled) return;
         if (!this.isContextResumed && this.context.resume) { // fix Autoplay Policy in Chrome
             var that = this;
             this.context.resume().then(function () {
@@ -402,7 +411,7 @@ var T2MediaLib = (function(){
     // SEメソッド郡 //
 
     T2MediaLib.prototype.playSE = function(idx, vol, pan, rate, offset, loop, loopStart, loopEnd,start,duration) {//add start,duration by @hoge1e3
-        if (!this.context) return null;
+        if (!this.context || this.disabled) return null;
         var soundData = this.soundDataAry[idx];
         if (soundData == null) return null;
         if (!soundData.isDecodeComplete()) {
@@ -527,6 +536,7 @@ var T2MediaLib = (function(){
         return source;
     };
     T2MediaLib.prototype.stopSE = function(sourceObj) {
+        if (this.disabled) return null;
         if (!(sourceObj instanceof AudioBufferSourceNode)) return null;
         try {
             sourceObj.stop(0);
@@ -540,6 +550,7 @@ var T2MediaLib = (function(){
         return sourceObj;
     };
     T2MediaLib.prototype.stopAllSE = function(sourceObj) {
+        if (this.disabled) return;
         var t=this;
         this.seSources.forEach(function (s) {
             t.stopSE(s);
@@ -619,7 +630,6 @@ var T2MediaLib = (function(){
     // BGMメソッド郡 //
 
     T2MediaLib.prototype.playBGM = function(id, idx, loop, offset, loopStart, loopEnd) {
-        if (!this.context) return null;
         var bgmPlayer = this._getBgmPlayer(id);
         if (!bgmPlayer) return null;
         return bgmPlayer.playBGM(idx, loop, offset, loopStart, loopEnd);
@@ -778,21 +788,22 @@ var T2MediaLib = (function(){
 
     // Audioメソッド郡 //
 
-    T2MediaLib.prototype.loadAudio = function(idx, url) {
+    T2MediaLib.prototype.loadAudio = function(idx, url, callbacks) {
         var audio = new Audio(url);
-        audio.play();
+        //audio.play();
 
         this.audioDataAry.data[idx] = null;
 
         var that = this;
-        audio.addEventListener('loadstart', function() {
-            if (!that.context) return null;
-            var source = that.context.createMediaElementSource(audio);
-            source.connect(that.context.destination);
-        }, false);
+        // audio.addEventListener('loadstart', function() {
+        //     if (!that.context) return null;
+        //     var source = that.context.createMediaElementSource(audio);
+        //     source.connect(that.context.destination);
+        // }, false);
 
         audio.addEventListener('canplay', function() {
-            this.audioDataAry.data[idx] = audio;
+            that.audioDataAry.data[idx] = audio;
+            if (callbacks && callbacks.succ) callbacks.succ(idx);
         }, false);
 
         audio.load();
@@ -938,10 +949,17 @@ var T2MediaLib_BGMPlayer = (function(){
     // BGM関数郡 //
 
     T2MediaLib_BGMPlayer.prototype.playBGM = function(idx, loop, offset, loopStart, loopEnd) {
+        if (this.disabled) return this;
         this.stopBGM();
 
         var soundData = this.t2MediaLib.soundDataAry[idx];
-        if (soundData == null) return null;
+        if (soundData == null) return this;
+
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            this.t2MediaLib.playAudio(idx, loop, offset);
+            return this;
+        }
+
         if (!soundData.isDecodeComplete()) {
             var that = this;
             var callbacks = {};
@@ -1018,6 +1036,11 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.stopBGM = function() {
+        if (this.disabled) return this;
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            this.t2MediaLib.stopAudio();
+            return this;
+        }
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.Stop();
@@ -1043,6 +1066,11 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.pauseBGM = function() {
+        if (this.disabled) return this;
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            this.t2MediaLib.pauseAudio();
+            return this;
+        }
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.pause();
@@ -1082,6 +1110,11 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.resumeBGM = function() {
+        if (this.disabled) return this;
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            this.t2MediaLib.resumeAudio();
+            return this;
+        }
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.resume();
@@ -1109,6 +1142,7 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.setBGMVolume = function(vol) {
+        if (!this.context || this.disabled) return this;
         var bgm = this.playingBGM;
         this.bgmVolume = vol;
         if (isMezonetPlayback(bgm)){
@@ -1130,7 +1164,6 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.setBGMTempo = function(tempo) {
-        // MP3, Ogg, AAC, WAV
         var bgm = this.playingBGM;
 
         if (tempo <= 0 || isNaN(tempo)) tempo = 1;
@@ -1141,6 +1174,7 @@ var T2MediaLib_BGMPlayer = (function(){
             bgm.plusTime -= (this.t2MediaLib.context.currentTime - bgm.playStartTime) * (tempo - this.bgmTempo);
         }
         this.bgmTempo = tempo;
+        // MP3, Ogg, AAC, WAV
         this.t2MediaLib.setSERate(bgm, tempo);
         return this;
     };
@@ -1152,10 +1186,8 @@ var T2MediaLib_BGMPlayer = (function(){
     T2MediaLib_BGMPlayer.prototype.setBGMPan = function(pan) {
         var bgm = this.playingBGM;
         this.bgmPan = pan;
-        if (bgm instanceof AudioBufferSourceNode) {
-            // MP3, Ogg, AAC, WAV
-            this.t2MediaLib.setSEPan(bgm, pan);
-        }
+        // MP3, Ogg, AAC, WAV
+        this.t2MediaLib.setSEPan(bgm, pan);
         return this;
     };
 
@@ -1443,6 +1475,10 @@ var T2MediaLib_SoundData = (function(){
     T2MediaLib_SoundData.prototype.removeDecodedData = function() {
         this.state = "loaded";
         this.decodedData = null;
+    };
+
+    T2MediaLib_SoundData.prototype.getURL = function() {
+        return this.url;
     };
 
     return T2MediaLib_SoundData;

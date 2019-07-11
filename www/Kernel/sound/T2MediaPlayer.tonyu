@@ -46,7 +46,7 @@ native console;
 }
 //@hoge1e3
 \loadFromProject(prj) {
-    if (!available) return;
+    //if (!available) return;
     var r=prj.getResource();
     if (!r || !r.sounds) return;
     if (r.sounds <= 0) return;
