@@ -52,7 +52,7 @@ native console;
     if (r.sounds <= 0) return;
 
     progressNoLog("Loading sounds...[0/"+r.sounds.length+"]");
-    var jobs=6; // 6つ同時読み込み（NW.jsでは54以上同時読み込みするとフリーズしてしまう）
+    var jobs=1; // 6つ同時読み込み（NW.jsでは54以上同時読み込みするとフリーズしてしまう）
     var cnt=0;
     var s, name, url;
     var func = function(seName, errorID){ // seName=="$se_xxx"
@@ -65,6 +65,7 @@ native console;
 
         var nextIdx = cnt + jobs;
         cnt ++;
+        console.log("func ", nextIdx, seName, errorID);
         progressNoLog("Loading sounds...["+(cnt)+"/"+r.sounds.length+"]");
         if (nextIdx >= r.sounds.length) return;
         var s = r.sounds[nextIdx];
@@ -185,6 +186,7 @@ native console;
 
 // BGM //
 \playBGM(idx, loop, offset, loopStart, loopEnd) {
+    console.log("T2MediaPlayer.tonyu playBGM", mute, loop, offset);
     if (mute) return;
     if (loop == null) loop = false;
     if (offset == null) offset = 0;
