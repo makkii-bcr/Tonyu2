@@ -1233,8 +1233,12 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.getBGMCurrentTime = function() {
-        var bgm = this.playingBGM;
         var time;
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            time = this.getAudioCurrentTime();
+            return time;
+        }
+        var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             return bgm.getTrackTime();
         } else if (isPicoAudio(bgm)) {
@@ -1292,6 +1296,10 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.getBGMLength = function() {
+        if (!this.t2MediaLib.context) { // Web Audio API 非サポート
+            time = this.getAudioLength();
+            return time;
+        }
         var bgm = this.playingBGM;
         if (isPicoAudio(bgm)) {
             // Midi
@@ -1360,7 +1368,6 @@ var T2MediaLib_BGMPlayer = (function(){
 
     T2MediaLib_BGMPlayer.prototype.playAudio = function(idx, loop, startTime) {
         var audio = this.t2MediaLib.audioObjAry[idx];
-        console.log(audio);
         if (!audio) return null;
         if (!startTime) startTime = 0;
 
@@ -1368,9 +1375,11 @@ var T2MediaLib_BGMPlayer = (function(){
         //     this.playingAudio.pause();
         //     this.playingAudio.currentTime = 0;
         // }
+
+        console.log(audio, idx, loop, startTime);
         audio.loop = loop;
-        audio.volume = this.audioVolume;
-        audio.currentTime = startTime;
+        audio.volume = this.bgmVolume;
+        //audio.currentTime = startTime;
         audio.play();
 
         this.playingBGM = audio;
@@ -1413,14 +1422,14 @@ var T2MediaLib_BGMPlayer = (function(){
     };
 
     T2MediaLib_BGMPlayer.prototype.setAudioVolume = function(vol) {
-        this.audioVolume = vol;
+        this.bgmVolume = vol;
         if (this.playingBGM instanceof Audio) {
             this.playingBGM.volume = vol;
         }
     };
 
     T2MediaLib_BGMPlayer.prototype.setAudioTempo = function(tempo) {
-        this.audioTempo = tempo;
+        this.bgmTempo = tempo;
         if (this.playingBGM instanceof Audio) {
             this.playingBGM.playbackRate = tempo;
         }
