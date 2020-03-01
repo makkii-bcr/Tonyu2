@@ -3,6 +3,7 @@ native Math;
 native $;
 native console;
 \new (param){
+    bufSplit=512;
     sx=0;
     sy=0;
     alpha=255;
@@ -12,7 +13,7 @@ native console;
     if (typeof col!=="number") col=$screenWidth/chipWidth;
     if (typeof row!=="number") row=$screenHeight/chipHeight;
     col=floor(col);row=floor(row);
-    buf=$("<canvas>").attr{width:col*chipWidth,height:row*chipHeight};
+    bufAry=createBuf(col*chipWidth,row*chipHeight);
     mapObj=true;
     mapTable = [];
     mapOnTable = [];
@@ -35,6 +36,27 @@ native console;
     }*/
     initMap();
 }
+\createBuf(width,height){
+    var rh=floor(height); // remaining Height
+    var ary=[];
+    for(var j=0;0<rh;j++){
+        var a=[];
+        var h=rh;
+        if(rh>bufSplit) h=bufSplit;
+        if(rh<2) h=2;
+        var rw=floor(width); // remaining Width
+        for(var i=0;0<rw;i++){
+            var w=rw;
+            if(rw>bufSplit) w=bufSplit;
+            if(rw<2) w=2;
+            a.push($("<canvas>").attr{width:w,height:h});
+            rw-=bufSplit;
+        }
+        ary.push(a);
+        rh-=bufSplit;
+    }
+    return ary;
+}
 \initMap(){
     if(!mapData) return;
     for(var i=0;i<row;i++){
@@ -54,7 +76,7 @@ native console;
 }
 \redraw(){
     if(!mapTable) return;
-    buf=$("<canvas>").attr{width:col*chipWidth,height:row*chipHeight};
+    bufAry=createBuf(col*chipWidth,row*chipHeight);
     for(var i=0;i<row;i++){
         for(var j=0;j<col;j++){
             set(j,i,mapTable[i][j]);
@@ -79,7 +101,7 @@ native console;
     mapOnData=mapOnTable;
     if (baseData[2]) chipWidth=(baseData[2]-0)||chipWidth||32;
     if (baseData[3]) chipHeight=(baseData[3]-0)||chipHeight||32;
-    buf=$("<canvas>").attr{width:col*chipWidth,height:row*chipHeight};
+    bufAry=createBuf(col*chipWidth,row*chipHeight);
     initMap();
 }
 \save(saveFileName) {
@@ -91,36 +113,60 @@ native console;
     if(setCol>=col || setRow>=row || setCol<0 || setRow<0) return;
     mapTable[setRow][setCol]=p;
     //mapOnTable[setRow][setCol]=-1;
-    ctx=buf[0].getContext("2d");
-    if (!ctx) return;
-    p=Math.floor(p);
-    pImg=$imageList[p];
-    if (!pImg) {
-        ctx.clearRect(setCol*chipWidth,setRow*chipHeight,chipWidth,chipHeight);
-        return;
+    var x1 = floor(setCol*chipWidth/bufSplit);
+    var x2 = floor((setCol+1)*chipWidth/bufSplit);
+    var y1 = floor(setRow*chipHeight/bufSplit);
+    var y2 = floor((setRow+1)*chipHeight/bufSplit);
+    var hs=bufAry.length;
+    for(var j=y1;j<=y2;j++){
+        var ws=bufAry[j].length;
+        for(var i=x1;i<=x2;i++){
+            var drawX = setCol*chipWidth-i*bufSplit;
+            var drawY = setRow*chipHeight-j*bufSplit;
+            ctx=bufAry[j][i][0].getContext("2d");
+            if (!ctx) return;
+            p=Math.floor(p);
+            pImg=$imageList[p];
+            if (!pImg) {
+                ctx.clearRect(drawX,drawY,chipWidth,chipHeight);
+                return;
+            }
+            ctx.clearRect(drawX,drawY,chipWidth,chipHeight);
+            ctx.save();
+            //console.log("SET",    pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
+            //    setCol*chipWidth, setRow*chipHeight, chipWidth, chipHeight);
+            ctx.drawImage(
+            pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
+            drawX, drawY, chipWidth, chipHeight);
+            ctx.restore();
+        }
     }
-    ctx.clearRect(setCol*chipWidth,setRow*chipHeight,chipWidth,chipHeight);
-    ctx.save();
-    //console.log("SET",    pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
-    //    setCol*chipWidth, setRow*chipHeight, chipWidth, chipHeight);
-    ctx.drawImage(
-    pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
-    setCol*chipWidth, setRow*chipHeight, chipWidth, chipHeight);
-    ctx.restore();
 }
 \setOn(setCol,setRow,p){
     if(setCol>=col || setRow>=row || setCol<0 || setRow<0) return;
     set(setCol,setRow,mapTable[setRow][setCol]);
     mapOnTable[setRow][setCol]=p;
-    ctx=buf[0].getContext("2d");
-    p=Math.floor(p);
-    pImg=$imageList[p];
-    if (!pImg) return;
-    ctx.save();
-    ctx.drawImage(
-    pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
-    setCol*chipWidth, setRow*chipHeight, chipWidth, chipHeight);
-    ctx.restore();
+    var x1 = floor(setCol*chipWidth/bufSplit);
+    var x2 = floor((setCol+1)*chipWidth/bufSplit);
+    var y1 = floor(setRow*chipHeight/bufSplit);
+    var y2 = floor((setRow+1)*chipHeight/bufSplit);
+    var drawX = amod(setCol*chipWidth,bufSplit);
+    var drawY = amod(setRow*chipHeight,bufSplit);
+    var hs=bufAry.length;
+    for(var j=y1;j<=y2;j++){
+        var ws=bufAry[j].length;
+        for(var i=x1;i<=x2;i++){
+            ctx=bufAry[j][i][0].getContext("2d");
+            p=Math.floor(p);
+            pImg=$imageList[p];
+            if (!pImg) return;
+            ctx.save();
+            ctx.drawImage(
+            pImg.image, pImg.x, pImg.y, pImg.width, pImg.height,
+            drawX, drawY, chipWidth, chipHeight);
+            ctx.restore();
+        }
+    }
 }
 \setOnAt(setX,setY,p){
     setOn(Math.floor((setX-sx)/chipWidth),Math.floor((setY-sy)/chipHeight),p);
@@ -147,11 +193,17 @@ native console;
     sy=-scrollY;
 }
 \draw(ctx) {
-    pImg=buf[0];
-    ctx.save();
-    ctx.globalAlpha=alpha/255;
-    ctx.drawImage(
-    pImg, 0, 0,col*chipWidth, row*chipHeight,
-    sx, sy, col*chipWidth, row*chipHeight);
-    ctx.restore();
+    var hs=bufAry.length;
+    for(var j=0;j<hs;j++){
+        var ws=bufAry[j].length;
+        for(var i=0;i<ws;i++){
+            pImg=bufAry[j][i][0];
+            ctx.save();
+            ctx.globalAlpha=alpha/255;
+            ctx.drawImage(
+            pImg, 0, 0, pImg.width, pImg.height,
+            sx+i*bufSplit, sy+j*bufSplit, pImg.width, pImg.height);
+            ctx.restore();
+        }
+    }
 }
