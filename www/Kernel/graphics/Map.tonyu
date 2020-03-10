@@ -124,7 +124,7 @@ native console;
             var drawY = setRow*chipHeight-j*bufSplit;
             var cv=bufAry[j][i];
             if (!cv) return;
-            var ctx=bufAry[j][i][0].getContext("2d");
+            var ctx=cv[0].getContext("2d");
             if (!ctx) return;
 
             // draw set
@@ -153,9 +153,11 @@ native console;
     }
 }
 \set(setCol,setRow,p){
+    if(setCol>=col || setRow>=row || setCol<0 || setRow<0) return;
     setAll(setCol,setRow,p,mapOnTable[setRow][setCol]);
 }
 \setOn(setCol,setRow,onP){
+    if(setCol>=col || setRow>=row || setCol<0 || setRow<0) return;
     setAll(setCol,setRow,mapTable[setRow][setCol],onP);
 }
 \setOnAt(setX,setY,p){
@@ -192,29 +194,200 @@ native console;
     var ls=(typeof lay.scale=="number")? lay.scale : 1; // layer scale
     var lr=(typeof lay.rotation=="number")? lay.rotation : 0; // layer rotation
     var hs=bufAry.length;
-    // var sum=0;
-    for(var j=0;j<hs;j++){
-        var ws=bufAry[j].length;
-        for(var i=0;i<ws;i++){
-            var pImg=bufAry[j][i][0];
-            var dx=sx+i*bufSplit; // layer draw x
-            var dy=sy+j*bufSplit; // layer draw y
-            var dw=pImg.width;    // layer draw width
-            var dh=pImg.height;   // layer draw height
-            var mx1=lsx+(-lwx+dx)*ls;    // Map draw x1
-            var my1=lsy+(-lwy+dy)*ls;    // Map draw y1
-            var mx2=lsx+(-lwx+dx+dw)*ls; // Map draw x2
-            var my2=lsy+(-lwy+dy+dh)*ls; // Map draw y2
-            if(lr!=0||(0<=mx2 && mx1<$screenWidth && 0<=my2 && my1<$screenHeight)){
-                ctx.save();
-                ctx.globalAlpha=alpha/255;
-                ctx.drawImage(
-                pImg, 0, 0, dw, dh,
-                dx, dy, dw, dh);
-                ctx.restore();
-                // sum++;
+    var sum=0;
+    ctx.save();
+    // if (lr==0) { // layer rotation == 0
+        for(var j=0;j<hs;j++){
+            var ws=bufAry[j].length;
+            for(var i=0;i<ws;i++){
+                var pCv=bufAry[j][i];
+                if (!pCv) return;
+                var pCtx=pCv[0];
+                if (!pCtx) return;
+                var dx=sx+i*bufSplit; // Split Map x
+                var dy=sy+j*bufSplit; // Split Map y
+                var dw=pCtx.width;    // Split Map width
+                var dh=pCtx.height;   // Split Map height
+                var mx1=lsx+(dx-lwx)*ls;    // Map draw x1 (left)
+                var my1=lsy+(dy-lwy)*ls;    // Map draw y1 (top)
+                var mx2=lsx+(dx-lwx+dw)*ls; // Map draw x2 (right)
+                var my2=lsy+(dy-lwy+dh)*ls; // Map draw y2 (buttom)
+                if(lr!=0 || (0<=mx2 && mx1<$screenWidth && 0<=my2 && my1<$screenHeight)){
+                    ctx.globalAlpha=alpha/255;
+                    ctx.drawImage(
+                    pCtx, 0, 0, dw, dh,
+                    dx, dy, dw, dh);
+                    // if ((i+j)%2==1) {
+                    //     var ga = ctx.globalAlpha;
+                    //     var fi = ctx.fillStyle;
+                    //     ctx.globalAlpha = 0.125;
+                    //     ctx.fillStyle = "rgb(255, 255, 0)";
+                    //     ctx.fillRect(dx, dy, dw, dh);
+                    //     ctx.globalAlpha = ga;
+                    //     ctx.fillStyle = fi;
+                    // }
+                    sum++;
+                }
             }
         }
-    }
-    // console.log("draw",lsx,lsy,lwx,lwy,ls,lr,sum);
+    // } else { // layer rotation != 0
+    //     // var lxyAry = [
+    //     //     -lsx, -lsy, $screenWidth
+    //     // ];
+    //     var msin=sin(lr);
+    //     var mcos=cos(lr);
+    //     for(var j=0;j<hs;j++){
+    //         var ws=bufAry[j].length;
+    //         for(var i=0;i<ws;i++){
+    //             var pCv=bufAry[j][i];
+    //             if (!pCv) return;
+    //             var pCtx=pCv[0];
+    //             if (!pCtx) return;
+    //             var dx=sx+i*bufSplit; // Split Map x
+    //             var dy=sy+j*bufSplit; // Split Map y
+    //             var dw=pCtx.width;    // Split Map width
+    //             var dh=pCtx.height;   // Split Map height
+    //             var mx1=(dx-lwx)*ls;    // Map draw x1 (left)
+    //             var my1=(dy-lwy)*ls;    // Map draw y1 (top)
+    //             var mx2=(dx-lwx+dw)*ls; // Map draw x2 (right)
+    //             var my2=(dy-lwy+dh)*ls; // Map draw y2 (buttom)
+    //             var txy=[ // temp Map draw x,y
+    //                 mx1, my1,
+    //                 mx2, my1,
+    //                 mx2, my2,
+    //                 mx1, my2,
+    //             ];
+    //             var mxy=[];
+    //             for(var k=0;k<4;k++){ // Map x,y rotation
+    //                 mxy.push(txy[k]*mcos+txy[k+1]*msin+lsx);
+    //                 mxy.push(txy[k+1]*mcos+txy[k]*msin+lsy);
+    //             }
+    //             if(0+16<=mx2 && mx1<$screenWidth-16 && 0+16<=my2 && my1<$screenHeight-16){
+    //                 ctx.globalAlpha=alpha/255;
+    //                 ctx.drawImage(
+    //                 pCtx, 0, 0, dw, dh,
+    //                 dx, dy, dw, dh);
+    //                 if ((i+j)%2==1) {
+    //                     var ga = ctx.globalAlpha;
+    //                     var fi = ctx.fillStyle;
+    //                     ctx.globalAlpha = 0.125;
+    //                     ctx.fillStyle = "rgb(255, 255, 0)";
+    //                     ctx.fillRect(dx, dy, dw, dh);
+    //                     ctx.globalAlpha = ga;
+    //                     ctx.fillStyle = fi;
+    //                 }
+    //                 sum++;
+    //             }
+    //         }
+    //     }
+    // }
+    ctx.restore();
+    // console.log("draw",
+    // "lsx:",lsx,
+    // "lsy:",lsy,
+    // "lwx:",lwx,
+    // "lwy:",lwy,
+    // "ls:",ls,
+    // "lr:",lr,
+    // "sum:",sum);
 }
+
+// \draw2(ctx) {
+//     var lay=$Screen.findLayer(layer);
+//     //console.log("lay",lay);
+//     var lsx=lay.spx; // Screen pivot x
+//     var lsy=lay.spy; // Screen pivot y
+//     var lwx=lay.wpx; // World pivot x
+//     var lwy=lay.wpy; // World pivot y
+//     var ls=(typeof lay.scale=="number")? lay.scale : 1; // layer scale
+//     var lr=(typeof lay.rotation=="number")? lay.rotation : 0; // layer rotation
+//     var hs=bufAry.length;
+//     var ws=hs>0? bufAry[0].length : 0;
+//     var sum=0;
+//     ctx.save();
+//     if (lr==0) { // layer rotation == 0
+//         var i1=floor(((lwx+sx)/ls-lsx)/bufSplit);
+//         var j1=floor(((lwy+sy)/ls-lsy)/bufSplit);
+//         var i2=floor(((lwx+sx+$screenWidth)/ls-lsx)/bufSplit);
+//         var j2=floor(((lwy+sy+$screenHeight)/ls-lsy)/bufSplit);
+//         i1 = i1<0 ? 0 : i1>=ws ? ws-1 : i1;
+//         j1 = j1<0 ? 0 : j1>=hs ? hs-1 : j1;
+//         i2 = i2<0 ? 0 : i2>=ws ? ws-1 : i2;
+//         j2 = j2<0 ? 0 : j2>=hs ? hs-1 : j2;
+//         for(var j=j1;j<=j2;j++){
+//             for(var i=i1;i<=i2;i++){
+//                 var pImg=bufAry[j][i];
+//                 if (!pImg) return;
+//                 var pCtx=pImg[0];
+//                 if (!pCtx) return;
+//                 var dx=sx+i*bufSplit; // layer draw x
+//                 var dy=sy+j*bufSplit; // layer draw y
+//                 var dw=pImg.width;    // layer draw width
+//                 var dh=pImg.height;   // layer draw height
+//                 var mx1=lsx+(-lwx+dx)*ls;    // Map draw x1 (left)
+//                 var my1=lsy+(-lwy+dy)*ls;    // Map draw y1 (top)
+//                 var mx2=lsx+(-lwx+dx+dw)*ls; // Map draw x2 (right)
+//                 var my2=lsy+(-lwy+dy+dh)*ls; // Map draw y2 (buttom)
+//                 if(0+16<=mx2 && mx1<$screenWidth-16 && 0+16<=my2 && my1<$screenHeight-16){
+//                     ctx.globalAlpha=alpha/255;
+//                     ctx.drawImage(
+//                     pCtx, 0, 0, dw, dh,
+//                     dx, dy, dw, dh);
+//                     // if ((i+j)%2==1) {
+//                     //     var ga = ctx.globalAlpha;
+//                     //     var fi = ctx.fillStyle;
+//                     //     ctx.globalAlpha = 0.125;
+//                     //     ctx.fillStyle = "rgb(255, 255, 0)";
+//                     //     ctx.fillRect(dx, dy, dw, dh);
+//                     //     ctx.globalAlpha = ga;
+//                     //     ctx.fillStyle = fi;
+//                     // }
+//                     sum++;
+//                 }
+//             }
+//         }
+//     } else { // layer rotation != 0
+//         // var lxyAry = [
+//         //     -lsx, -lsy, $screenWidth
+//         // ];
+//         // for(var j=0;j<hs;j++){
+//         //     var ws=bufAry[j].length;
+//         //     for(var i=0;i<ws;i++){
+//         //         var pImg=bufAry[j][i][0];
+//         //         var dx=sx+i*bufSplit; // layer draw x
+//         //         var dy=sy+j*bufSplit; // layer draw y
+//         //         var dw=pImg.width;    // layer draw width
+//         //         var dh=pImg.height;   // layer draw height
+//         //         var mx1=lsx+(-lwx+dx)*ls;    // Map draw x1
+//         //         var my1=lsy+(-lwy+dy)*ls;    // Map draw y1
+//         //         var mx2=lsx+(-lwx+dx+dw)*ls; // Map draw x2
+//         //         var my2=lsy+(-lwy+dy+dh)*ls; // Map draw y2
+//         //         if(0+16<=mx2 && mx1<$screenWidth-16 && 0+16<=my2 && my1<$screenHeight-16){
+//         //             ctx.globalAlpha=alpha/255;
+//         //             ctx.drawImage(
+//         //             pImg, 0, 0, dw, dh,
+//         //             dx, dy, dw, dh);
+//         //             if ((i+j)%2==1) {
+//         //                 var ga = ctx.globalAlpha;
+//         //                 var fi = ctx.fillStyle;
+//         //                 ctx.globalAlpha = 0.125;
+//         //                 ctx.fillStyle = "rgb(255, 255, 0)";
+//         //                 ctx.fillRect(dx, dy, dw, dh);
+//         //                 ctx.globalAlpha = ga;
+//         //                 ctx.fillStyle = fi;
+//         //             }
+//         //             sum++;
+//         //         }
+//         //     }
+//         // }
+//     }
+//     ctx.restore();
+//     console.log("draw",
+//     "lsx:",lsx,
+//     "lsy:",lsy,
+//     "lwx:",lwx,
+//     "lwy:",lwy,
+//     "ls:",ls,
+//     "lr:",lr,
+//     "sum:",sum);
+// }
