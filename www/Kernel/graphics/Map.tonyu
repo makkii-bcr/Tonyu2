@@ -196,7 +196,7 @@ native console;
     var hs=bufAry.length;
     var sum=0;
     ctx.save();
-    // if (lr==0) { // layer rotation == 0
+    if (lr==0) { // layer rotation == 0
         for(var j=0;j<hs;j++){
             var ws=bufAry[j].length;
             for(var i=0;i<ws;i++){
@@ -212,75 +212,72 @@ native console;
                 var my1=lsy+(dy-lwy)*ls;    // Map draw y1 (top)
                 var mx2=lsx+(dx-lwx+dw)*ls; // Map draw x2 (right)
                 var my2=lsy+(dy-lwy+dh)*ls; // Map draw y2 (buttom)
-                if(lr!=0 || (0<=mx2 && mx1<$screenWidth && 0<=my2 && my1<$screenHeight)){
+                if(0<=mx2 && mx1<$screenWidth && 0<=my2 && my1<$screenHeight){
                     ctx.globalAlpha=alpha/255;
                     ctx.drawImage(
                     pCtx, 0, 0, dw, dh,
                     dx, dy, dw, dh);
-                    // if ((i+j)%2==1) {
-                    //     var ga = ctx.globalAlpha;
-                    //     var fi = ctx.fillStyle;
-                    //     ctx.globalAlpha = 0.125;
-                    //     ctx.fillStyle = "rgb(255, 255, 0)";
-                    //     ctx.fillRect(dx, dy, dw, dh);
-                    //     ctx.globalAlpha = ga;
-                    //     ctx.fillStyle = fi;
-                    // }
+                    if ((i+j)%2==1) {
+                        var ga = ctx.globalAlpha;
+                        var fi = ctx.fillStyle;
+                        ctx.globalAlpha = 0.125;
+                        ctx.fillStyle = "rgb(255, 255, 0)";
+                        ctx.fillRect(dx, dy, dw, dh);
+                        ctx.globalAlpha = ga;
+                        ctx.fillStyle = fi;
+                    }
                     sum++;
                 }
             }
         }
-    // } else { // layer rotation != 0
-    //     // var lxyAry = [
-    //     //     -lsx, -lsy, $screenWidth
-    //     // ];
-    //     var msin=sin(lr);
-    //     var mcos=cos(lr);
-    //     for(var j=0;j<hs;j++){
-    //         var ws=bufAry[j].length;
-    //         for(var i=0;i<ws;i++){
-    //             var pCv=bufAry[j][i];
-    //             if (!pCv) return;
-    //             var pCtx=pCv[0];
-    //             if (!pCtx) return;
-    //             var dx=sx+i*bufSplit; // Split Map x
-    //             var dy=sy+j*bufSplit; // Split Map y
-    //             var dw=pCtx.width;    // Split Map width
-    //             var dh=pCtx.height;   // Split Map height
-    //             var mx1=(dx-lwx)*ls;    // Map draw x1 (left)
-    //             var my1=(dy-lwy)*ls;    // Map draw y1 (top)
-    //             var mx2=(dx-lwx+dw)*ls; // Map draw x2 (right)
-    //             var my2=(dy-lwy+dh)*ls; // Map draw y2 (buttom)
-    //             var txy=[ // temp Map draw x,y
-    //                 mx1, my1,
-    //                 mx2, my1,
-    //                 mx2, my2,
-    //                 mx1, my2,
-    //             ];
-    //             var mxy=[];
-    //             for(var k=0;k<4;k++){ // Map x,y rotation
-    //                 mxy.push(txy[k]*mcos+txy[k+1]*msin+lsx);
-    //                 mxy.push(txy[k+1]*mcos+txy[k]*msin+lsy);
-    //             }
-    //             if(0+16<=mx2 && mx1<$screenWidth-16 && 0+16<=my2 && my1<$screenHeight-16){
-    //                 ctx.globalAlpha=alpha/255;
-    //                 ctx.drawImage(
-    //                 pCtx, 0, 0, dw, dh,
-    //                 dx, dy, dw, dh);
-    //                 if ((i+j)%2==1) {
-    //                     var ga = ctx.globalAlpha;
-    //                     var fi = ctx.fillStyle;
-    //                     ctx.globalAlpha = 0.125;
-    //                     ctx.fillStyle = "rgb(255, 255, 0)";
-    //                     ctx.fillRect(dx, dy, dw, dh);
-    //                     ctx.globalAlpha = ga;
-    //                     ctx.fillStyle = fi;
-    //                 }
-    //                 sum++;
-    //             }
-    //         }
-    //     }
-    // }
+    } else { // layer rotation != 0
+        var msin=sin(lr);
+        var mcos=cos(lr);
+        for(var j=0;j<hs;j++){
+            var ws=bufAry[j].length;
+            for(var i=0;i<ws;i++){
+                var pCv=bufAry[j][i];
+                if (!pCv) return;
+                var pCtx=pCv[0];
+                if (!pCtx) return;
+                var dx=sx+i*bufSplit; // Split Map x
+                var dy=sy+j*bufSplit; // Split Map y
+                var dw=pCtx.width;    // Split Map width
+                var dh=pCtx.height;   // Split Map height
+                var mx1=(dx-lwx)*ls;    // Map draw x1 (left)
+                var my1=(dy-lwy)*ls;    // Map draw y1 (top)
+                var mx2=(dx-lwx+dw)*ls; // Map draw x2 (right)
+                var my2=(dy-lwy+dh)*ls; // Map draw y2 (buttom)
+                var txy=[ // temp Map draw x,y
+                    mx1, my1,
+                    mx2, my1,
+                    mx2, my2,
+                    mx1, my2,
+                ];
+                var mxy=[];
+                for(var k=0;k<4;k++){ // Map x,y rotation
+                    mxy.push(txy[k]*mcos+txy[k+1]*msin+lsx);
+                    mxy.push(txy[k+1]*mcos+txy[k]*msin+lsy);
+                }
+                if(0+16<=mx2 && mx1<$screenWidth-16 && 0+16<=my2 && my1<$screenHeight-16){
+                    ctx.globalAlpha=alpha/255;
+                    ctx.drawImage(
+                    pCtx, 0, 0, dw, dh,
+                    dx, dy, dw, dh);
+                    if ((i+j)%2==1) {
+                        var ga = ctx.globalAlpha;
+                        var fi = ctx.fillStyle;
+                        ctx.globalAlpha = 0.125;
+                        ctx.fillStyle = "rgb(255, 255, 0)";
+                        ctx.fillRect(dx, dy, dw, dh);
+                        ctx.globalAlpha = ga;
+                        ctx.fillStyle = fi;
+                    }
+                    sum++;
+                }
+            }
+        }
+    }
     ctx.restore();
     // console.log("draw",
     // "lsx:",lsx,
