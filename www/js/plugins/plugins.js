@@ -1,7 +1,7 @@
 define(["WebSite","root"],function (WebSite,root){
     var plugins={};
     var installed= {
-        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/BodyActor/,symbol:"Box2D" },
+        box2d:{src: "Box2D_v2.3.1_min.js",detection:/BodyActor/,symbol:"Box2D" },
         timbre: {src:"timbre.js",symbol:"T" },
         gif: {src:"gif-concat.js",detection:/GIFWriter/,symbol:"GIF"},
         Mezonet: {src:"Mezonet.js", symbol: "Mezonet"},
