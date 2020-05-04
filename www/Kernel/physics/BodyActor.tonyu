@@ -83,7 +83,7 @@ var _x,_y,_vx,_vy,_rotation,_vr;
     var fps=wworld.fps;
     var r=rotation,ve=bvec(defv(vx*fps ,0),defv(vy*fps,0)),vr=defv(vrotation,0);
     body=world.CreateBody(bodyDef);
-    body.CreateFixture(fixDef/*,0*/);
+    body.CreateFixture(fixDef);
     body.SetUserData(this);
     body.SetLinearVelocity(ve);
     rotation=r;
@@ -151,16 +151,12 @@ var _x,_y,_vx,_vy,_rotation,_vr;
 \applyForce(fx,fy,px,py) {
     if (!initBody()) return;
     var b2Vec2 = Box2D.b2Vec2;
-    var scale=getWorld().scale;
-    var fps=60;
-    body.ApplyForce(new b2Vec2(fx ,fy),body.GetPosition());
+    body.ApplyForce(new b2Vec2(fx,fy),body.GetPosition());
 }
 \applyImpulse(fx,fy,px,py) {
     if (!initBody()) return;
     var b2Vec2 = Box2D.b2Vec2;
-    var scale=getWorld().scale;
-    var fps=60;
-    body.ApplyImpulse(new b2Vec2(fx ,fy),body.GetPosition());
+    body.ApplyImpulse(new b2Vec2(fx,fy),body.GetPosition());
 }
 
 \applyTorque(a) {
@@ -170,8 +166,8 @@ var _x,_y,_vx,_vy,_rotation,_vr;
 \moveBy(dx,dy) {
     if (!initBody()) return;
     var pos=body.GetPosition();
-    pos.x+=dx/wscale;
-    pos.y+=dy/wscale;
+    pos.set_x(pos.set_x()+dx/wscale);
+    pos.set_y(pos.set_y()+dy/wscale);
     body.SetPosition(pos);
 }
 \contactTo(t) {
@@ -201,8 +197,8 @@ var _x,_y,_vx,_vy,_rotation,_vr;
     } else {
         var bodyDef = new b2BodyDef;
         bodyDef.set_type(Box2D.b2_staticBody);
-        bodyDef.get_position().set_x(px /scale);
-        bodyDef.get_position().set_y(py /scale);
+        bodyDef.get_position().set_x(px/scale);
+        bodyDef.get_position().set_y(py/scale);
         bodyB=world.CreateBody(bodyDef);
     }
     var b2Vec2 = Box2D.b2Vec2;
