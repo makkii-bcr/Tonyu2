@@ -18,8 +18,8 @@ prevFrameCount = -1;
     // カーソル操作ができるようにGamepadのメソッドを使うまでGamepad APIは使用しない
     if (!useGamePad) {
         update();
+        useGamePad = true;
     }
-    useGamePad = true;
 }
 
 \padsCount() {
@@ -125,34 +125,22 @@ prevFrameCount = -1;
 
 \update() {
     // ブラウザがGamepad APIに対応していなかったら処理しない
-    if(!(window.Gamepad)) {
+    if(!(window.Gamepad || navigator.getGamepads || navigator.webkitGetGamepads)) {
         available = false;
         //print("null window.Gamepad");
         return;
     }
-    // ブラウザがGamepad APIに対応していなかったら処理しない
-    if(!(navigator.getGamepads)) {
-        available = false;
-        //print("null navigator.getGamepads");
-        return;
-    }
     available = true;
     // GamePad系のメソッドが呼ばれていなければGamePadの処理はしない
-    if (!useGamePad) {
-        return;
-    }
+    if (!useGamePad) return;
     // ユーザが明示的に無効にすることもできるようにしておく
-    if (!enable) {
-        return;
-    }
+    if (!enable) return;
     // 同じフレームで２回以上は処理しない
-    if (prevFrameCount == $frameCount) {
-        return;
-    }
+    if (prevFrameCount == $frameCount) return;
     
     // gamepad.indexとgetGamepads()で返されるpadの順番はindexと異なっている場合がある
     // pads[0]にgamepad.index==1のものがあるブラウザもある
-    var pads = navigator.getGamepads();
+    var pads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
     for (var i=0; i<pads.length; i++) {
         var pad = pads[i];
         //print("pad "+i+" "+pad);
@@ -201,7 +189,7 @@ prevFrameCount = -1;
         }
         
         // 上下左右キーの押下フレームをカウント
-        var AXIS_NEUTRAL = 0.5; // 押下として扱う閾値
+        var AXIS_NEUTRAL = 0.4; // 押下として扱う閾値
         if (pad.axes.length >= 2) {
             var axisLR = pad.axes[0];
             var axisUD = pad.axes[1];

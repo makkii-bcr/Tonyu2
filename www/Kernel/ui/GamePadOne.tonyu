@@ -1,0 +1,20 @@
+extends TObject;
+
+\new(pads, padNo) {
+    this.pads=pads;
+    this.padNo=padNo;
+}
+
+\getPad() { return pads.padsCount(padNo); }
+\getPadId() { return pads.getPadId(padNo); }
+\isConnected() { return pads.isConnected(padNo); }
+\getMapping() { return pads.getMapping(padNo); }
+\getButton(btnNo) { return pads.getButton(padNo, btnNo); }
+\getButtonValue(btnNo) { return pads.getButtonValue(padNo, btnNo); }
+\getButtonCount() { return pads.getButtonCount(padNo); }
+\getAxis(btnNo) { return pads.getAxis(padNo, btnNo); }
+\getAxisCount() { return pads.getAxisCount(padNo); }
+\getUp() { return pads.getUp(padNo); }
+\getDown() { return pads.getDown(padNo); }
+\getLeft() { return pads.getLeft(padNo); }
+\getRight() { return pads.getRight(padNo); }
