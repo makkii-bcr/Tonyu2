@@ -22,6 +22,16 @@ prevFrameCount = -1;
     }
 }
 
+\getGamepads() {
+    enableGamePad();
+    var pads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+    return pads;
+}
+
+\get(no) {
+    return new GamePadOne(this, no);
+}
+
 \padsCount() {
     enableGamePad();
     var count = 0;
@@ -33,94 +43,93 @@ prevFrameCount = -1;
 
 \getPad(index) {
     enableGamePad();
-    if (!gamepads[index]) return null;
-    return gamepads[index].pad;
+    var gp = gamepads[index];
+    if (!gp) return null;
+    return gp.pad;
 }
 
 \getPadId(index) {
     enableGamePad();
-    if (!gamepads[index]) return null;
-    if (!gamepads[index].pad) return null;
-    return gamepads[index].pad.id;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad) return null;
+    return gp.pad.id;
 }
 
 \isConnected(index) {
     enableGamePad();
-    if (!gamepads[index]) return false;
-    if (!gamepads[index].pad) return false;
-    return gamepads[index].pad.connected;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad) return false;
+    return gp.pad.connected;
 }
 
 \getMapping(index) {
     enableGamePad();
-    if (!gamepads[index]) return null;
-    if (!gamepads[index].pad) return null;
-    return gamepads[index].pad.mapping;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad) return null;
+    return gp.pad.mapping;
 }
 
 \getButton(index, no) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    if (!gamepads[index].status) return 0;
-    if (!gamepads[index].status[no]) return 0;
-    return gamepads[index].status[no];
+    var gp = gamepads[index];
+    if (!gp || !gp.status || !gp.status[no]) return 0;
+    return gp.status[no];
 }
 
 \getButtonValue(index, no) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    if (!gamepads[index].pad) return 0;
-    if (!gamepads[index].pad.buttons) return 0;
-    if (!gamepads[index].pad.buttons[no]) return 0;
-    return gamepads[index].pad.buttons[no].value;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad || !gp.pad.buttons || !gp.pad.buttons[no]) return 0;
+    return gp.pad.buttons[no].value;
 }
 
 \getButtonCount(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    if (!gamepads[index].pad) return 0;
-    if (!gamepads[index].pad.buttons) return 0;
-    return gamepads[index].pad.buttons.length;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad || !gp.pad.buttons) return 0;
+    return gp.pad.buttons.length;
 }
 
 \getAxis(index, no) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    if (!gamepads[index].pad) return 0;
-    if (!gamepads[index].pad.axes) return 0;
-    return gamepads[index].pad.axes[no];
+    var gp = gamepads[index];
+    if (!gp || !gp.pad || !gp.pad.axes) return 0;
+    return gp.pad.axes[no];
 }
 
 \getAxisCount(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    if (!gamepads[index].pad) return 0;
-    if (!gamepads[index].pad.axes) return 0;
-    return gamepads[index].pad.axes.length;
+    var gp = gamepads[index];
+    if (!gp || !gp.pad || !gp.pad.axes) return 0;
+    return gp.pad.axes.length;
 }
 
 \getUp(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    return gamepads[index].statusA1U;
+    var gp = gamepads[index];
+    if (!gp) return 0;
+    return gp.statusA1U;
 }
 
 \getDown(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    return gamepads[index].statusA1D;
+    var gp = gamepads[index];
+    if (!gp) return 0;
+    return gp.statusA1D;
 }
 
 \getLeft(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    return gamepads[index].statusA1L;
+    var gp = gamepads[index];
+    if (!gp) return 0;
+    return gp.statusA1L;
 }
 
 \getRight(index) {
     enableGamePad();
-    if (!gamepads[index]) return 0;
-    return gamepads[index].statusA1R;
+    var gp = gamepads[index];
+    if (!gp) return 0;
+    return gp.statusA1R;
 }
 
 \update() {
