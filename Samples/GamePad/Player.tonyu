@@ -43,7 +43,7 @@ while (true) {
                 y += vy * 3;
             }
         } else {
-            // 単純な移動
+            // 単純な移動（デジタル移動）
             // コントローラの左キー or 14番目のボタン
             if (gamePad.getLeft() || gamePad.getButton(14)) x -= 3;
             // コントローラの右キー or 15番目のボタン
