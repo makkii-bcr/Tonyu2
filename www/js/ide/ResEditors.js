@@ -27,8 +27,17 @@ function (ResEditor,Klass,OggConverter,WebSite,R) {
                 });
                 if (hasMZO) prj.addPlugin("Mezonet");
                 else prj.removePlugin("Mezonet");
-                if (hasMIDI) prj.addPlugin("PicoAudio");
-                else prj.removePlugin("PicoAudio");
+                if (hasMIDI) {
+                    prj.addPlugin("PicoAudio");
+                    prj.addPlugin("JZZ");
+                    prj.addPlugin("JZZ.midi.SMF");
+                    prj.addPlugin("JZZ.synth.Tiny");
+                } else {
+                    prj.removePlugin("PicoAudio");
+                    prj.removePlugin("JZZ");
+                    prj.removePlugin("JZZ.midi.SMF");
+                    prj.removePlugin("JZZ.synth.Tiny");
+                }
 
                 var rsrcDir=context.resourceDir;
                 if (rsrcDir.exists()) {

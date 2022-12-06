@@ -8,15 +8,54 @@ var T2MediaLib = (function(){
     function isMezonetSource(bgm) {
         return typeof Mezonet!=="undefined" && bgm instanceof Mezonet.Source;
     }
+    function isJzzPlayer(bgm) {
+        return bgm != null && bgm.isJzzPlayer;
+        //return typeof JZZ!=="undefined" &&
+        //    typeof JZZ.Widget!=="undefined" && bgm instanceof JZZ.Widget;
+    }
     function isAudioBufferSourceNode(bgm) {
         // return bgm instanceof AudioBufferSourceNode || bgm instanceof WebKitAudioBufferSourceNode; // 本来はこの処理にしたい
         // Safari 14でAudioBufferSourceNodeがWebKitAudioBufferSourceNodeに変更されたように、
         // WebAPIの名前変更は予測できないので、消去方で判定する
-        return bgm != null && !(isPicoAudio(bgm) || isMezonetSource(bgm))
+        return bgm != null && !(isPicoAudio(bgm) || isMezonetSource(bgm) || isJzzPlayer(bgm));
+    }
+    function loadScriptJzz(onSuccess) {
+        // if (typeof Scaledrone==="undefined") {
+        //     return $.getScript("https://cdn.scaledrone.com/scaledrone.min.js");
+        // } else {
+        //     return Promise.resolve();
+        // }
+        var scripts = ["JZZ", "JZZ.midi.SMF", "JZZ.synth.Tiny"];
+        new Promise(function(start){
+            // if (typeof requirejs!=="undefined") {
+            //     console.log("1");
+            //     requirejs(scripts, start);
+            //     start();
+            // } else {
+                console.log("2");
+                Promise.all(scripts.map(function(script){$.getScript(script)}))
+                    .then(function(jzz, jzz_midi_smf, jzz_synth_tiny) {
+                        console.log("3",jzz, jzz_midi_smf, jzz_synth_tiny);
+                        window.JZZ = jzz;
+                        window.JZZ.midi = {}; window.JZZ.midi.SMF = jzz_midi_smf;
+                        window.JZZ.synth = {}; window.JZZ.synth.Tiny = jzz_synth_tiny;
+                        onSuccess();
+                    });
+            // }
+        });
+        // .then(function(jzz, jzz_midi_smf, jzz_synth_tiny) {
+        //     console.log("3",jzz, jzz_midi_smf, jzz_synth_tiny);
+        //     window.JZZ = jzz;
+        //     window.JZZ.midi = {}; window.JZZ.midi.SMF = jzz_midi_smf;
+        //     window.JZZ.synth = {}; window.JZZ.synth.Tiny = jzz_synth_tiny;
+        //     onSuccess();
+        // });
     }
     var T2MediaLib = function(_context) {
         this.context = null;
+        this.selectMidiPlayer = -1; // -1:uninit, 0:auto, 1:PicoAudio, 2:JZZ
         this.picoAudio = null;
+        this.jzz = null;
         this.soundDataAry = []; // T2MediaLib_SoundData
         this.bgmPlayerMax = 16;
         this.bgmPlayerAry = []; // T2MediaLib_BGMPlayer
@@ -61,6 +100,20 @@ var T2MediaLib = (function(){
             }
         }
     };
+    
+    // MIDIプレイヤー変更 //
+    T2MediaLib.prototype.selectSoundSourceJzz = function(select) {
+        this.selectMidiPlayer = select;
+    }
+    T2MediaLib.prototype.isSelectSoundSourceJzz = function() {
+        if (this.selectMidiPlayer == -1) {
+            if (Tonyu.globals.$selectMidiPlayer!=="undefined" && Tonyu.globals.$selectMidiPlayer != null) {
+                this.selectMidiPlayer = Tonyu.globals.$selectMidiPlayer;
+            }
+            if (this.selectMidiPlayer == -1) this.selectMidiPlayer = 0;
+        }
+        return this.selectMidiPlayer == 2;
+    }
 
     // CLEAR系関数 //
     T2MediaLib.prototype.allClearSoundData = function() {
@@ -136,12 +189,22 @@ var T2MediaLib = (function(){
 
         // midiがあったらpicoAudioを準備しておく
         if (url.match(/\.(midi?)$/) || url.match(/^data:audio\/mid/)) {
-            if (this.picoAudio == null) {
-                this.picoAudio = new PicoAudio({
-                    audioContext: this.context,
-                    isSkipBeginning: true,
-                    initReverb: 0
-                });
+            if (this.isSelectSoundSourceJzz()) {
+                if (this.jzz == null) {
+                    // smfデータがないと初期化できないので仮データを入れる
+                    this.jzz = true;
+                    loadScriptJzz(function(){
+                        JZZ.synth.Tiny.register('Web Audio');
+                    });
+                }
+            } else {
+                if (this.picoAudio == null) {
+                    this.picoAudio = new PicoAudio({
+                        audioContext: this.context,
+                        isSkipBeginning: true,
+                        initReverb: 0
+                    });
+                }
             }
         }
         if (typeof WebSite=="object" && WebSite.mp3Disabled) {
@@ -232,33 +295,47 @@ var T2MediaLib = (function(){
         var that = this;
         if (soundData.url.match(/\.(midi?)$/) || soundData.url.match(/^data:audio\/mid/)) {
             // Midi
-            // PicoAudio.jsにデコードしてもらう
-            if (this.picoAudio == null) {
-                this.picoAudio = new PicoAudio({
-                    audioContext: this.context,
-                    isSkipBeginning: true,
-                    initReverb: 0
-                });
-            }
-            var smf = new Uint8Array(arrayBuffer);
-            var data = this.picoAudio.parseSMF(smf);
-            if (typeof data == "string") { // parseSMF Error
-                console.log('T2MediaLib: Error parseSMF()', data);
-                this.soundDataAry[idx].onError("DECODE_ERROR");
-                soundData.decodedCallbacksAry.forEach(function(callbacks) {
-                    if (typeof callbacks.err == "function") {
-                        callbacks.err(idx, this.soundDataAry[idx].errorID);
-                    }
-                });
-                soundData.decodedCallbacksAry = null;
-            } else {
-                this.soundDataAry[idx].onDecodeComplete(data);
+            if (this.isSelectSoundSourceJzz()) { // JZZ
+                var smfData = new Uint8Array(arrayBuffer);
+                var smf = new JZZ.MIDI.SMF(smfData);
+
+                // TODO エラー時の処理が必要
+                this.soundDataAry[idx].onDecodeComplete(smf);
                 soundData.decodedCallbacksAry.forEach(function(callbacks) {
                     if (typeof callbacks.succ == "function") {
                         callbacks.succ(idx);
                     }
                 });
                 soundData.decodedCallbacksAry = null;
+            } else { // PicoAudio
+                // PicoAudio.jsにデコードしてもらう
+                if (this.picoAudio == null) {
+                    this.picoAudio = new PicoAudio({
+                        audioContext: this.context,
+                        isSkipBeginning: true,
+                        initReverb: 0
+                    });
+                }
+                var smf = new Uint8Array(arrayBuffer);
+                var data = this.picoAudio.parseSMF(smf);
+                if (typeof data == "string") { // parseSMF Error
+                    console.log('T2MediaLib: Error parseSMF()', data);
+                    this.soundDataAry[idx].onError("DECODE_ERROR");
+                    soundData.decodedCallbacksAry.forEach(function(callbacks) {
+                        if (typeof callbacks.err == "function") {
+                            callbacks.err(idx, this.soundDataAry[idx].errorID);
+                        }
+                    });
+                    soundData.decodedCallbacksAry = null;
+                } else {
+                    this.soundDataAry[idx].onDecodeComplete(data);
+                    soundData.decodedCallbacksAry.forEach(function(callbacks) {
+                        if (typeof callbacks.succ == "function") {
+                            callbacks.succ(idx);
+                        }
+                    });
+                    soundData.decodedCallbacksAry = null;
+                }
             }
         } else if (soundData.url.match(/\.mzo$/) || soundData.url.match(/^data:audio\/mzo/)) {
             //console.log("Loading mzo");
@@ -920,6 +997,24 @@ var T2MediaLib_BGMPlayer = (function(){
     function isPicoAudio(bgm) {
         return typeof PicoAudio!=="undefined" && bgm instanceof PicoAudio;
     }
+    function isJzz(bgm) {
+        return isJzzPlayer(bgm);
+        // return this.jzz != null && this.jzz === bgm;
+        // return typeof JZZ!=="undefined" && 
+        // typeof JZZ.MIDI!=="undefined" &&
+        // typeof JZZ.MIDI.SMF!=="undefined" &&
+        // typeof JZZ.MIDI.SMF.Player!=="undefined" && bgm instanceof JZZ.MIDI.SMF.Player;
+    }
+    function isJzzPlayer(bgm) {
+        return bgm != null && bgm.isJzzPlayer;
+        //return typeof JZZ!=="undefined" &&
+        //    typeof JZZ.Widget!=="undefined" && bgm instanceof JZZ.Widget;
+    }
+    function isJzzSmf(bgm) {
+        return typeof JZZ!=="undefined" &&
+        typeof JZZ.MIDI!=="undefined" &&
+        typeof JZZ.MIDI.SMF!=="undefined" && bgm instanceof JZZ.MIDI.SMF;
+    }
     function isMezonetSource(bgm) {
         return typeof Mezonet!=="undefined" && bgm instanceof Mezonet.Source;
     }
@@ -930,7 +1025,7 @@ var T2MediaLib_BGMPlayer = (function(){
         // return bgm instanceof AudioBufferSourceNode || bgm instanceof WebKitAudioBufferSourceNode; // 本来はこの処理にしたい
         // Safari 14でAudioBufferSourceNodeがWebKitAudioBufferSourceNodeに変更されたように、
         // WebAPIの名前変更は予測できないので、消去方で判定する
-        return bgm != null && !(isPicoAudio(bgm) || isMezonetSource(bgm) || isMezonetPlayback(bgm))
+        return bgm != null && !(isPicoAudio(bgm) || isMezonetSource(bgm) || isMezonetPlayback(bgm) || isJzzSmf(bgm) || isJzzPlayer(bgm));
     }
     var T2MediaLib_BGMPlayer = function(t2MediaLib, arg_id) {
         this.t2MediaLib = t2MediaLib;
@@ -953,6 +1048,7 @@ var T2MediaLib_BGMPlayer = (function(){
         this.picoAudioSetDataBGMName = null; // 前回のsetDataした曲を再び使う場合は、setDataを省略して軽量化する
         this.PICO_AUDIO_VOLUME_COEF = 1;//0.2;
         this.isTagLoop = true; // Ogg VorbisファイルにLOOPSTART,LOOPLENGTHのタグが入っている場合、再生時にそれを適用するか
+        this.jzz = null;
     };
 
     // BGM関数郡 //
@@ -1010,8 +1106,20 @@ var T2MediaLib_BGMPlayer = (function(){
             this.playingBGM = this.t2MediaLib._playSE(idx,
                 this.bgmVolume * this.t2MediaLib.bgmMasterVolume * this.t2MediaLib.masterVolume,
                 this.bgmPan, this.bgmTempo, offset, loop, loopStart, loopEnd);
+        } else if (isJzzSmf(decodedData)) {
+            // Midi (JZZ)
+            if (this.jzz == null) {
+                JZZ.synth.Tiny.register('Web Audio');
+            }
+            var midiout = JZZ().openMidiOut();
+            this.jzz = decodedData.player();
+            this.jzz.connect(midiout);
+            this.jzz.loop(loop?-1:0);
+            this.jzz.play();
+            this.jzz.isJzzPlayer = true;
+            this.playingBGM = this.jzz;
         } else if (decodedData instanceof Object) {
-            // Midi
+            // Midi (PicoAudio)
             this._initPicoAudio();
             if (idx != this.picoAudioSetDataBGMName) {
                 this.picoAudio.setData(decodedData);
@@ -1043,8 +1151,11 @@ var T2MediaLib_BGMPlayer = (function(){
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.Stop();
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            this.jzz.stop();
         } else if (isPicoAudio(bgm)) {
-            // Midi
+            // Midi (PicoAudio)
             this.picoAudio.stop();
         } else if (isAudioBufferSourceNode(bgm)) {
             // MP3, Ogg, AAC, WAV
@@ -1068,8 +1179,11 @@ var T2MediaLib_BGMPlayer = (function(){
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.pause();
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            bgm.pause();
         } else if (isPicoAudio(bgm)) {
-            // Midi
+            // Midi (PicoAudio)
             if (this.bgmPause === 0) {
                 this.bgmPauseTime = this.getBGMCurrentTime();
                 this.bgmPauseCurrentTime = bgm.context.currentTime;
@@ -1107,6 +1221,9 @@ var T2MediaLib_BGMPlayer = (function(){
         var bgm = this.playingBGM;
         if (isMezonetPlayback(bgm)){
             bgm.resume();
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            bgm.resume();
         } else if (isPicoAudio(bgm)) {
             // Midi
             if (this.bgmPause === 1) {
@@ -1135,8 +1252,11 @@ var T2MediaLib_BGMPlayer = (function(){
         this.bgmVolume = vol;
         if (isMezonetPlayback(bgm)){
             bgm.setVolume(vol * this.t2MediaLib.bgmMasterVolume * this.t2MediaLib.masterVolume);
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            
         } else if (isPicoAudio(bgm)) {
-            // Midi
+            // Midi (PicoAudio)
             this.picoAudio.setMasterVolume(this.PICO_AUDIO_VOLUME_COEF * vol * this.t2MediaLib.bgmMasterVolume * this.t2MediaLib.masterVolume);
         } else if (isAudioBufferSourceNode(bgm)) {
             // MP3, Ogg, AAC, WAV
@@ -1159,6 +1279,9 @@ var T2MediaLib_BGMPlayer = (function(){
         if (isMezonetPlayback(bgm)){
             bgm.setRate(tempo);
             return this;
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            bgm.speed(tempo);
         } else if (isAudioBufferSourceNode(bgm) && this.bgmPause === 0) {
             bgm.plusTime -= (this.t2MediaLib.context.currentTime - bgm.playStartTime) * (tempo - this.bgmTempo);
         }
@@ -1183,8 +1306,11 @@ var T2MediaLib_BGMPlayer = (function(){
 
     T2MediaLib_BGMPlayer.prototype.isBGMLoop = function() {
         var bgm = this.playingBGM;
-        if (isPicoAudio(bgm)) {
-            // Midi
+        if (isJzz(bgm)) {
+            // Midi (JZZ)
+            bgm.loop != 0;
+        } else if (isPicoAudio(bgm)) {
+            // Midi (PicoAudio)
             return this.picoAudio.isLoop();
         } else if (isAudioBufferSourceNode(bgm)) {
             // MP3, Ogg, AAC, WAV
@@ -1199,7 +1325,10 @@ var T2MediaLib_BGMPlayer = (function(){
 
     T2MediaLib_BGMPlayer.prototype.setBGMLoop = function(loop) {
         var bgm = this.playingBGM;
-        if (isPicoAudio(bgm)) {
+        if (isJzz(bgm)) {
+            // Midi (JZZ)
+            bgm.loop(loop?-1:0);
+        } else if (isPicoAudio(bgm)) {
             // Midi
             this.picoAudio.setLoop(loop);
         } else if (isAudioBufferSourceNode(bgm)) {
@@ -1276,8 +1405,11 @@ var T2MediaLib_BGMPlayer = (function(){
         var time;
         if (isMezonetPlayback(bgm)){
             return bgm.getTrackTime();
+        } else if (isJzz(bgm)) {
+            // Midi (JZZ)
+            return bgm.positionMS() / 1000;
         } else if (isPicoAudio(bgm)) {
-            // Midi
+            // Midi (PicoAudio)
             if (this.bgmPause === 0) {
                 time = this.picoAudio.context.currentTime - this.picoAudio.states.startTime;
             } else {
@@ -1329,8 +1461,11 @@ var T2MediaLib_BGMPlayer = (function(){
 
     T2MediaLib_BGMPlayer.prototype.getBGMLength = function() {
         var bgm = this.playingBGM;
-        if (isPicoAudio(bgm)) {
-            // Midi
+        if (isJzz(bgm)) {
+            // Midi (JZZ)
+            return bgm.durationMS() / 1000;
+        } else if (isPicoAudio(bgm)) {
+            // Midi (PicoAudio)
             return this.picoAudio.getTime(Number.MAX_SAFE_INTEGER);
         } else if (isAudioBufferSourceNode(bgm)) {
             // MP3, Ogg, AAC, WAV

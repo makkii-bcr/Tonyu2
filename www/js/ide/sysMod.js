@@ -137,7 +137,7 @@ return {
     detectPlugins: function () {
         var opt=this.getOptions();
         var plugins=opt.plugins=opt.plugins||{};
-        if (!plugins.Mezonet || !plugins.PicoAudio) {
+        if (!plugins.Mezonet || !plugins.PicoAudio || !plugins.JZZ) {
             var res=this.getResource();
             var hasMZO=false,hasMIDI=false;
             if (res.sounds) res.sounds.forEach(function (item) {
@@ -146,8 +146,17 @@ return {
             });
             if (hasMZO) this.addPlugin("Mezonet");
             else this.removePlugin("Mezonet");
-            if (hasMIDI) this.addPlugin("PicoAudio");
-            else this.removePlugin("PicoAudio");
+            if (hasMIDI) {
+                this.addPlugin("PicoAudio");
+                this.addPlugin("JZZ");
+                this.addPlugin("JZZ.midi.SMF");
+                this.addPlugin("JZZ.synth.Tiny");
+            } else {
+                this.removePlugin("PicoAudio");
+                this.removePlugin("JZZ");
+                this.removePlugin("JZZ.midi.SMF");
+                this.removePlugin("JZZ.synth.Tiny");
+            }
         }
     },
     addPlugin: function (name) {
