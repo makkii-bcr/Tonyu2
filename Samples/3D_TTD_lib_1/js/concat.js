@@ -64,7 +64,6 @@ Tonyu.klass.define({
               _this.gk=10000;
             }
           }
-          _this.cameraMain();
           _this.update();
           
         }
@@ -125,7 +124,6 @@ Tonyu.klass.define({
               _this.gk=10000;
             }
           }
-          (yield* _this.fiber$cameraMain(_thread));
           (yield* _this.fiber$update(_thread));
           
         }
@@ -149,11 +147,11 @@ Tonyu.klass.define({
         
         _this.onStart();
         _this.onBeforeMove();
-        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_385() {
+        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_437() {
           
           _this.onBeforeMove();
         }));
-        Tonyu.globals.$Boot.on("afterMove",(function anonymous_430() {
+        Tonyu.globals.$Boot.on("afterMove",(function anonymous_481() {
           
           _this.onAfterMove();
         }));
@@ -163,11 +161,11 @@ Tonyu.klass.define({
         
         (yield* _this.fiber$onStart(_thread));
         (yield* _this.fiber$onBeforeMove(_thread));
-        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_385() {
+        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_437() {
           
           _this.onBeforeMove();
         }));
-        Tonyu.globals.$Boot.on("afterMove",(function anonymous_430() {
+        Tonyu.globals.$Boot.on("afterMove",(function anonymous_481() {
           
           _this.onAfterMove();
         }));
@@ -179,7 +177,6 @@ Tonyu.klass.define({
         Tonyu.globals.$printSize=12;
         _this.print("操作:\n←→:向き\n↑↓:前進後進\nA,Z:上下移動\nS,X:上下角\nD,F:傾き\nQ,W:ズーム");
         Tonyu.globals.$TD_Z=new Tonyu.classes.kernel.TD_Z;
-        Tonyu.globals.$TD_Z.STARTING();
         Tonyu.globals.$Camera=new Tonyu.classes.user.Camera({x: 0,y: 500,z: 0,xz: 0,yz: 0,xy: 0,gk: 0,k_max: 10,GL: 0,GU: 0,GR: Tonyu.globals.$screenWidth,GD: Tonyu.globals.$screenHeight});
         new Tonyu.classes.user.MyChar({x: - 250,y: - 250,z: 700});
       },
@@ -189,7 +186,6 @@ Tonyu.klass.define({
         Tonyu.globals.$printSize=12;
         _this.print("操作:\n←→:向き\n↑↓:前進後進\nA,Z:上下移動\nS,X:上下角\nD,F:傾き\nQ,W:ズーム");
         Tonyu.globals.$TD_Z=new Tonyu.classes.kernel.TD_Z;
-        Tonyu.globals.$TD_Z.STARTING();
         Tonyu.globals.$Camera=new Tonyu.classes.user.Camera({x: 0,y: 500,z: 0,xz: 0,yz: 0,xy: 0,gk: 0,k_max: 10,GL: 0,GU: 0,GR: Tonyu.globals.$screenWidth,GD: Tonyu.globals.$screenHeight});
         new Tonyu.classes.user.MyChar({x: - 250,y: - 250,z: 700});
         
