@@ -16,14 +16,26 @@ mmlBuf=[];
         cTimeBase+=m.currentTime;
         //print(m.currentTime);
     }
-    var mml=mmlBuf.shift();
-    if (!mml) {
+    var mmlAry=mmlBuf.shift();
+    if (!mmlAry) {
         m=null;
         cTimeBase=0;
         return;
     }
-    mwav=$WaveTable.get(0,0).play();
-    m=T("mml", {mml}, mwav);
+    let bundles=[];
+    let patInst=/^\s*@(\d+)(?:\s*,\s*(\d+))?/;
+    for (let mml of mmlAry) {
+        let m=patInst.exec(mml);
+        let inst=0, env=0;
+        if (m) {
+            mml=mml.substring(m[0].length);
+            inst=m[1]-0;
+            if (m[2]) env=m[2]-0;
+        }
+        let mwav=$WaveTable.get(inst,env).play();
+        bundles.push(T("mml", {mml}, mwav));
+    }
+    m=new MMLBundle(bundles);
     m.on("ended", playNext);
     m.start();
     $MMLS[id()]=this;

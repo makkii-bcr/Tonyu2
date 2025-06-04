@@ -1457,6 +1457,99 @@ Tonyu.klass.define({
   decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"playSE":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"setDelay":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"setVolume":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"s":{}}}
 });
 Tonyu.klass.define({
+  fullName: 'kernel.MMLBundle',
+  shortName: 'MMLBundle',
+  namespace: 'kernel',
+  superclass: Tonyu.classes.kernel.EventMod,
+  includes: [],
+  methods: function (__superClass) {
+    return {
+      main :function _trc_MMLBundle_main() {
+        var _this=this;
+        
+        "field strict";
+        
+      },
+      fiber$main :function* _trc_MMLBundle_f_main(_thread) {
+        var _this=this;
+        
+        "field strict";
+        
+        
+      },
+      initialize :function _trc_MMLBundle_initialize(mmls) {
+        var _this=this;
+        
+        _this.mmls=mmls;
+        let c = mmls.length;
+        
+        for (let [mml] of Tonyu.iterator2(mmls,1)) {
+          mml.on("ended",(function anonymous_173() {
+            
+            c--;
+            if (c<=0) {
+              _this.fireEvent("ended");
+            }
+          }));
+          
+        }
+      },
+      __getter__currentTime :function _trc_MMLBundle___getter__currentTime() {
+        var _this=this;
+        
+        return _this.mmls[0].currentTime;
+      },
+      pause :function _trc_MMLBundle_pause() {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.pause();
+        }
+      },
+      fiber$pause :function* _trc_MMLBundle_f_pause(_thread) {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.pause();
+        }
+        
+      },
+      stop :function _trc_MMLBundle_stop() {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.stop();
+        }
+      },
+      fiber$stop :function* _trc_MMLBundle_f_stop(_thread) {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.stop();
+        }
+        
+      },
+      start :function _trc_MMLBundle_start() {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.start();
+        }
+      },
+      fiber$start :function* _trc_MMLBundle_f_start(_thread) {
+        var _this=this;
+        
+        for (let [mml] of Tonyu.iterator2(_this.mmls,1)) {
+          mml.start();
+        }
+        
+      },
+      __dummy: false
+    };
+  },
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"new":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"__getter__currentTime":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"pause":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"start":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmls":{"vtype":"Array"}}}
+});
+Tonyu.klass.define({
   fullName: 'kernel.T1Array',
   shortName: 'T1Array',
   namespace: 'kernel',
@@ -13035,7 +13128,7 @@ Tonyu.klass.define({
       },
       playNext :function _trc_MML_playNext() {
         var _this=this;
-        var mml;
+        var mmlAry;
         
         if (_this.cTimeBase==null) {
           _this.cTimeBase=0;
@@ -13044,23 +13137,45 @@ Tonyu.klass.define({
           _this.cTimeBase+=_this.m.currentTime;
           
         }
-        mml = _this.mmlBuf.shift();
+        mmlAry = _this.mmlBuf.shift();
         
-        if (! mml) {
+        if (! mmlAry) {
           _this.m=null;
           _this.cTimeBase=0;
           return _this;
           
         }
-        _this.mwav=Tonyu.globals.$WaveTable.get(0,0).play();
-        _this.m=T("mml",{mml: mml},_this.mwav);
+        let bundles = [];
+        
+        let patInst = /^\s*@(\d+)(?:\s*,\s*(\d+))?/;
+        
+        for (let [mml] of Tonyu.iterator2(mmlAry,1)) {
+          let m = patInst.exec(mml);
+          
+          let inst = 0;
+          let env = 0;
+          
+          if (m) {
+            mml=mml.substring(m[0].length);
+            inst=m[1]-0;
+            if (m[2]) {
+              env=m[2]-0;
+            }
+            
+          }
+          let mwav = Tonyu.globals.$WaveTable.get(inst,env).play();
+          
+          bundles.push(T("mml",{mml: mml},mwav));
+          
+        }
+        _this.m=new Tonyu.classes.kernel.MMLBundle(bundles);
         _this.m.on("ended",Tonyu.bindFunc(_this,_this.playNext));
         _this.m.start();
         Tonyu.globals.$MMLS[_this.id()]=_this;
       },
       fiber$playNext :function* _trc_MML_f_playNext(_thread) {
         var _this=this;
-        var mml;
+        var mmlAry;
         
         if (_this.cTimeBase==null) {
           _this.cTimeBase=0;
@@ -13069,16 +13184,38 @@ Tonyu.klass.define({
           _this.cTimeBase+=_this.m.currentTime;
           
         }
-        mml = _this.mmlBuf.shift();
+        mmlAry = _this.mmlBuf.shift();
         
-        if (! mml) {
+        if (! mmlAry) {
           _this.m=null;
           _this.cTimeBase=0;
           return _this;
           
         }
-        _this.mwav=Tonyu.globals.$WaveTable.get(0,0).play();
-        _this.m=T("mml",{mml: mml},_this.mwav);
+        let bundles = [];
+        
+        let patInst = /^\s*@(\d+)(?:\s*,\s*(\d+))?/;
+        
+        for (let [mml] of Tonyu.iterator2(mmlAry,1)) {
+          let m = patInst.exec(mml);
+          
+          let inst = 0;
+          let env = 0;
+          
+          if (m) {
+            mml=mml.substring(m[0].length);
+            inst=m[1]-0;
+            if (m[2]) {
+              env=m[2]-0;
+            }
+            
+          }
+          let mwav = Tonyu.globals.$WaveTable.get(inst,env).play();
+          
+          bundles.push(T("mml",{mml: mml},mwav));
+          
+        }
+        _this.m=new Tonyu.classes.kernel.MMLBundle(bundles);
         _this.m.on("ended",Tonyu.bindFunc(_this,_this.playNext));
         _this.m.start();
         Tonyu.globals.$MMLS[_this.id()]=_this;
@@ -13178,7 +13315,7 @@ Tonyu.klass.define({
       __dummy: false
     };
   },
-  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"playNext":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"id":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"bufferCount":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"isPlaying":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"currentTime":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlBuf":{},"cTimeBase":{},"m":{},"mwav":{},"_id":{}}}
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"playNext":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"id":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"bufferCount":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"isPlaying":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"currentTime":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlBuf":{},"cTimeBase":{},"m":{},"_id":{},"mwav":{}}}
 });
 Tonyu.klass.define({
   fullName: 'kernel.MMTimer',
@@ -13302,9 +13439,18 @@ Tonyu.klass.define({
         _this.wav={};
         _this.env={};
         if (typeof  T!=="undefined") {
-          _this.env=T("env",{table: [1,[0.6,50],[0,100]],releaseNode: 2});
+          _this.env=T("env",{table: [1,[0.6,50],[0,100]]});
           _this.setEnv(0,_this.env);
+          _this.env=T("env",{table: [1,[0.9,50],[0.8,100]]});
+          _this.setEnv(1,_this.env);
+          _this.env=T("env",{table: [1,[0.6,25],[0,50]]});
+          _this.setEnv(2,_this.env);
           _this.setWav(0,T("pulse"));
+          _this.setWav(1,T("saw"));
+          _this.setWav(2,T("tri"));
+          _this.setWav(3,T("sin"));
+          _this.setWav(10,T("noise"));
+          _this.setWav(11,T("pink"));
           
         }
       },
@@ -13314,9 +13460,18 @@ Tonyu.klass.define({
         _this.wav={};
         _this.env={};
         if (typeof  T!=="undefined") {
-          _this.env=T("env",{table: [1,[0.6,50],[0,100]],releaseNode: 2});
+          _this.env=T("env",{table: [1,[0.6,50],[0,100]]});
           (yield* _this.fiber$setEnv(_thread, 0, _this.env));
+          _this.env=T("env",{table: [1,[0.9,50],[0.8,100]]});
+          (yield* _this.fiber$setEnv(_thread, 1, _this.env));
+          _this.env=T("env",{table: [1,[0.6,25],[0,50]]});
+          (yield* _this.fiber$setEnv(_thread, 2, _this.env));
           (yield* _this.fiber$setWav(_thread, 0, T("pulse")));
+          (yield* _this.fiber$setWav(_thread, 1, T("saw")));
+          (yield* _this.fiber$setWav(_thread, 2, T("tri")));
+          (yield* _this.fiber$setWav(_thread, 3, T("sin")));
+          (yield* _this.fiber$setWav(_thread, 10, T("noise")));
+          (yield* _this.fiber$setWav(_thread, 11, T("pink")));
           
         }
         
@@ -13341,6 +13496,17 @@ Tonyu.klass.define({
         var _this=this;
         
         _this.env[num]=synth;
+        
+      },
+      timbre :function _trc_WaveTable_timbre(...args) {
+        var _this=this;
+        
+        return T(...args);
+      },
+      fiber$timbre :function* _trc_WaveTable_f_timbre(_thread,...args) {
+        var _this=this;
+        
+        return T(...args);
         
       },
       get :function _trc_WaveTable_get(w,e) {
@@ -13372,7 +13538,7 @@ Tonyu.klass.define({
       __dummy: false
     };
   },
-  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"setWav":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"setEnv":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"get":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"wav":{},"env":{}}}
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"setWav":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"setEnv":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"timbre":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"get":{"nowait":false,"isMain":false,"vtype":{"params":[null,null],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"wav":{},"env":{}}}
 });
 Tonyu.klass.define({
   fullName: 'kernel.T1FillPolygon',
