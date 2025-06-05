@@ -13107,6 +13107,17 @@ Tonyu.klass.define({
         _this.mmlBuf=[];
         
       },
+      timbre :function _trc_MML_timbre(...args) {
+        var _this=this;
+        
+        return T(...args);
+      },
+      fiber$timbre :function* _trc_MML_f_timbre(_thread,...args) {
+        var _this=this;
+        
+        return T(...args);
+        
+      },
       play :function _trc_MML_play(mmls) {
         var _this=this;
         
@@ -13315,7 +13326,7 @@ Tonyu.klass.define({
       __dummy: false
     };
   },
-  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"playNext":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"id":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"bufferCount":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"isPlaying":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"currentTime":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlBuf":{},"cTimeBase":{},"m":{},"_id":{},"mwav":{}}}
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"timbre":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"playNext":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"id":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"bufferCount":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"isPlaying":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"currentTime":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"stop":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlBuf":{},"cTimeBase":{},"m":{},"_id":{},"mwav":{}}}
 });
 Tonyu.klass.define({
   fullName: 'kernel.MMTimer',
@@ -20814,6 +20825,25 @@ Tonyu.klass.define({
         
         
       },
+      T :function _trc_PlayMod_T(...args) {
+        var _this=this;
+        
+        _this._mml4T=_this._mml4T||new Tonyu.classes.kernel.MML;
+        return _this._mml4T.timbre(...args);
+      },
+      fiber$T :function* _trc_PlayMod_f_T(_thread,...args) {
+        var _this=this;
+        
+        _this._mml4T=_this._mml4T||new Tonyu.classes.kernel.MML;
+        return _this._mml4T.timbre(...args);
+        
+      },
+      __getter__waveTable :function _trc_PlayMod___getter__waveTable() {
+        var _this=this;
+        
+        _this.initMML();
+        return Tonyu.globals.$WaveTable;
+      },
       initMML :function _trc_PlayMod_initMML() {
         var _this=this;
         
@@ -20828,7 +20858,7 @@ Tonyu.klass.define({
           Tonyu.globals.$Boot.on("stop",Tonyu.bindFunc(_this,_this.releaseMML));
           
         }
-        _this.on("die",(function anonymous_353() {
+        _this.on("die",(function anonymous_501() {
           
           _this.play().stop();
         }));
@@ -20931,7 +20961,7 @@ Tonyu.klass.define({
       __dummy: false
     };
   },
-  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"initMML":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"releaseMML":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"playSE":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlInited":{},"_mml":{}}}
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"T":{"nowait":false,"isMain":false,"vtype":{"params":[null],"returnValue":null}},"__getter__waveTable":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"initMML":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"releaseMML":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}},"play":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"playSE":{"nowait":true,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"mmlInited":{},"_mml":{},"_mml4T":{}}}
 });
 Tonyu.klass.define({
   fullName: 'kernel.InputMod',

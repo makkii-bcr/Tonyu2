@@ -2,6 +2,9 @@ extends TObject;
 includes MathMod;
 native T;
 
+\timbre(...args) {
+    return T(...args);
+}
 mmlBuf=[];
 \play(mmls) {
     mmlBuf.push(mmls);
