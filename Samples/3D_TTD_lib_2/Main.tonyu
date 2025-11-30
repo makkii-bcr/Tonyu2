@@ -15,8 +15,12 @@
 // Tonyu1のFrameManagerと同じ動作にする
 onStart();
 onBeforeMove();
-$Boot.on("beforeMove") \{ onBeforeMove(); };
-$Boot.on("afterMove") \{ onAfterMove(); };
+let evtBeforeMove = $Boot.on("beforeMove") \{ onBeforeMove(); };
+let evtAfterMove = $Boot.on("afterMove") \{ onAfterMove(); };
+on("die") \{ // loadPageでこのクラスが消える場合は、イベントを削除して処理が重複しないようにする
+    evtBeforeMove.remove();
+    evtAfterMove.remove();
+};
 
 function onStart() { // 最初に1度のみ実行される
     $printSize = 12;

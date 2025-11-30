@@ -147,13 +147,20 @@ Tonyu.klass.define({
         
         _this.onStart();
         _this.onBeforeMove();
-        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_463() {
+        _this.evtBeforeMove = Tonyu.globals.$Boot.on("beforeMove",(function anonymous_483() {
           
           _this.onBeforeMove();
         }));
-        Tonyu.globals.$Boot.on("afterMove",(function anonymous_507() {
+        
+        _this.evtAfterMove = Tonyu.globals.$Boot.on("afterMove",(function anonymous_546() {
           
           _this.onAfterMove();
+        }));
+        
+        _this.on("die",(function anonymous_577() {
+          
+          _this.evtBeforeMove.remove();
+          _this.evtAfterMove.remove();
         }));
       },
       fiber$main :function* _trc_Main_f_main(_thread) {
@@ -161,13 +168,20 @@ Tonyu.klass.define({
         
         (yield* _this.fiber$onStart(_thread));
         (yield* _this.fiber$onBeforeMove(_thread));
-        Tonyu.globals.$Boot.on("beforeMove",(function anonymous_463() {
+        _this.evtBeforeMove = Tonyu.globals.$Boot.on("beforeMove",(function anonymous_483() {
           
           _this.onBeforeMove();
         }));
-        Tonyu.globals.$Boot.on("afterMove",(function anonymous_507() {
+        
+        _this.evtAfterMove = Tonyu.globals.$Boot.on("afterMove",(function anonymous_546() {
           
           _this.onAfterMove();
+        }));
+        
+        _this.on("die",(function anonymous_577() {
+          
+          _this.evtBeforeMove.remove();
+          _this.evtAfterMove.remove();
         }));
         
       },
@@ -221,7 +235,7 @@ Tonyu.klass.define({
       __dummy: false
     };
   },
-  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"onStart":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"onBeforeMove":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"onAfterMove":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{}}
+  decls: {"methods":{"main":{"nowait":false,"isMain":true,"vtype":{"params":[],"returnValue":null}},"onStart":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"onBeforeMove":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}},"onAfterMove":{"nowait":false,"isMain":false,"vtype":{"params":[],"returnValue":null}}},"fields":{"evtBeforeMove":{},"evtAfterMove":{}}}
 });
 Tonyu.klass.define({
   fullName: 'user.MyChar',
